@@ -1,0 +1,2 @@
+# Templr
+Folder template generator
