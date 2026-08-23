@@ -1,0 +1,16 @@
+name: Workflow
+
+on: push
+
+jobs:
+  prim_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check run
+        run: echo "success"
+
+      - name: List files
+        run: ls
+
+      - name: Read file
+        run: cat README.md

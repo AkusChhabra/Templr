@@ -1,0 +1,56 @@
+:root {
+  --ink: #0A0F16;
+  --panel: #111823;
+  --panel-2: #141D2A;
+  --line: #223041;
+  --line-soft: #182130;
+  --blue: #5EC8F2;
+  --blue-dim: #245066;
+  --amber: #F2A93B;
+  --amber-dim: #8A6427;
+  --folder: #F2C879;
+  --file: #7FD9C4;
+  --text: #E7ECF2;
+  --muted: #7C8894;
+  --muted-2: #4E5966;
+  --red: #E15252;
+  --red-dim: #5A2626;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    repeating-linear-gradient(0deg, rgba(94, 200, 242, 0.035) 0px, rgba(94, 200, 242, 0.035) 1px, transparent 1px, transparent 28px),
+    repeating-linear-gradient(90deg, rgba(94, 200, 242, 0.035) 0px, rgba(94, 200, 242, 0.035) 1px, transparent 1px, transparent 28px),
+    radial-gradient(ellipse 1000px 550px at 10% -10%, rgba(242, 169, 59, 0.05), transparent),
+    var(--ink);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(94, 200, 242, 0.25);
+}
+
+button {
+  font-family: inherit;
+}
+
+.wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 30px 22px 70px;
+}
