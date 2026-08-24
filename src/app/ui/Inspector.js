@@ -3,7 +3,7 @@
 import styles from "../page.module.css";
 import { extOf } from "../lib/utils.js";
 
-const officeExtensions = new Set(["xlsx", "docx", "pptx"]);
+const exts = new Set(["xlsx", "docx", "pptx"]);
 
 export default function Inspector({ tree, selectedId, onChange, onAdd, onDelete, templates = [] }) {
 	function findNode(node, id) {
@@ -72,7 +72,7 @@ export default function Inspector({ tree, selectedId, onChange, onAdd, onDelete,
 						<span className={`${styles["badge-swatch"]} ${styles["badge-file"]}`} />
 						{extension ? `.${extension} file` : "No extension file"}
 					</div>
-					{officeExtensions.has(extension) && (
+					{exts.has(extension) && (
 						<div className={styles["office-note"]}>
 							This will export as a valid, blank .{extension} document if left empty below. Type content in the editor and it will be saved as raw text instead.
 						</div>

@@ -3,6 +3,7 @@ import styles from "./page.module.css";
 import Tree from "./ui/Tree";
 import Inspector from "./ui/Inspector";
 import { useEffect, useRef, useState } from "react";
+import JSZip from "jszip";
 
 
 export default function Home() {
@@ -48,14 +49,41 @@ export default function Home() {
     setSelectedId(null);
   }
 
-  function handleDownload() {
-    const blob = new Blob([JSON.stringify(tree, null, 2)], { type: "application/json" });
+  async function handleDownload() {
+    const zip = new JSZip();
+    const rootName = sanitizeName(tree.name) || "project";
+    const rootFolder = zip.folder(rootName);
+
+    function addNodeToZip(folder, node) {
+      if (node.type === "folder") {
+        const targetFolder = node.id === tree.id ? folder : folder.folder(sanitizeName(node.name) || "untitled-folder");
+        if (node.children.length === 0 && node.id !== tree.id) targetFolder.file(".gitkeep", "");
+        node.children.forEach((child) => addNodeToZip(targetFolder, child));
+        return;
+      }
+
+      folder.file(sanitizeName(node.name) || "untitled-file", node.content || "");
+    }
+
+    function countExportableItems(node) {
+      if (node.type === "file") return 1;
+      return node.children.reduce((total, child) => total + countExportableItems(child), 0);
+    }
+
+    if (countExportableItems(tree) === 0 && tree.children.length === 0) return;
+
+    addNodeToZip(rootFolder, tree);
+    const blob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${tree.name || "project"}.json`;
+    link.download = `${rootName}.zip`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function sanitizeName(name) {
+    return (name || "").replace(/[\\/:*?"<>|]/g, "").trim();
   }
 
   function handleAdd(type, parentId) {
