@@ -403,6 +403,10 @@
   padding: 16px;
 }
 
+.inspectorArea {
+  padding: 16px;
+}
+
 .insp-empty {
   color: var(--muted-2);
   font-size: 13px;
@@ -443,6 +447,51 @@ label.f {
 
 .field {
   margin-bottom: 16px;
+}
+
+.field input,
+.field textarea,
+.field select {
+  box-sizing: border-box;
+}
+
+.nameInput {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  outline: none;
+}
+
+.nameInput::placeholder {
+  color: var(--muted-2);
+  font-family: var(--mono);
+  opacity: 1;
+}
+
+.nameInput:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(94, 200, 242, 0.12);
+}
+
+.contentBox {
+  min-height: 220px;
+}
+
+.templateSelect {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.templateSave {
+  width: 100%;
 }
 
 :global(input[type="text"]),
@@ -500,6 +549,17 @@ label.f {
   border-radius: 50%;
 }
 
+.badge-swatch {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.badge-file {
+  background: var(--file);
+}
+
 .office-note {
   font-size: 11.5px;
   color: var(--muted);
@@ -517,7 +577,11 @@ label.f {
   margin-bottom: 6px;
 }
 
-.tmpl-row:selection {
+.tmpl-row > select {
+  flex: 1;
+}
+
+.tmpl-row > .small-btn {
   flex: 1;
 }
 

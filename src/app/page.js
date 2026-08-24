@@ -1,7 +1,184 @@
-import Image from "next/image";
+"use client";
 import styles from "./page.module.css";
+import Tree from "./ui/Tree";
+import Inspector from "./ui/Inspector";
+import { useEffect, useRef, useState } from "react";
+
 
 export default function Home() {
+
+  const initialTree = {
+    id: "root",
+    type: "folder",
+    name: "MyProject",
+    children: [],
+  };
+  const [tree, setTree] = useState(initialTree);
+  const [selectedId, setSelectedId] = useState(null);
+  const [templates] = useState([]);
+  const hasLoadedStorage = useRef(false);
+
+  useEffect(() => {
+    const loadSavedTree = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem("workspace-tree");
+        if (saved) setTree(JSON.parse(saved));
+      } catch {
+        window.localStorage.removeItem("workspace-tree");
+      } finally {
+        hasLoadedStorage.current = true;
+      }
+    }, 0);
+
+    return () => window.clearTimeout(loadSavedTree);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStorage.current) return;
+    window.localStorage.setItem("workspace-tree", JSON.stringify(tree));
+  }, [tree]);
+
+  function handleNew() {
+    setTree({
+      id: "root",
+      type: "folder",
+      name: "MyProject",
+      children: [],
+    });
+    setSelectedId(null);
+  }
+
+  function handleDownload() {
+    const blob = new Blob([JSON.stringify(tree, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${tree.name || "project"}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleAdd(type, parentId) {
+    const newItem = {
+      id: crypto.randomUUID(),
+      type,
+      name: "",
+      ...(type === "folder" ? { children: [] } : { content: "" }),
+    };
+
+    function addToNode(node) {
+      if (node.id === parentId && node.type === "folder") {
+        return { ...node, children: [...node.children, newItem] };
+      }
+
+      if (node.type !== "folder") return node;
+
+      return {
+        ...node,
+        children: node.children.map(addToNode),
+      };
+    }
+
+    setTree(addToNode);
+    setSelectedId(newItem.id);
+  }
+
+  function handleDelete(nodeId) {
+    if (nodeId === tree.id) return;
+
+    function removeFromNode(node) {
+      if (node.type !== "folder") return node;
+
+      return {
+        ...node,
+        children: node.children
+          .filter((child) => child.id !== nodeId)
+          .map(removeFromNode),
+      };
+    }
+
+    setTree(removeFromNode);
+    setSelectedId((current) => (current === nodeId ? null : current));
+  }
+
+  function handleMove(draggedId, targetId, position) {
+    if (draggedId === tree.id || draggedId === targetId) return;
+
+    function findNode(node, id) {
+      if (node.id === id) return node;
+      if (node.type === "folder") {
+        for (const child of node.children) {
+          const found = findNode(child, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    function isDescendant(node, id) {
+      return node.id === id || (node.type === "folder" && node.children.some((child) => isDescendant(child, id)));
+    }
+
+    const draggedNode = findNode(tree, draggedId);
+    if (!draggedNode || isDescendant(draggedNode, targetId)) return;
+
+    let movedNode = null;
+    function removeNode(node) {
+      if (node.type !== "folder") return node;
+      const remaining = [];
+      for (const child of node.children) {
+        if (child.id === draggedId) movedNode = child;
+        else remaining.push(removeNode(child));
+      }
+      return { ...node, children: remaining };
+    }
+
+    const withoutDragged = removeNode(tree);
+    if (!movedNode) return;
+
+    function insertNode(node) {
+      if (node.id === targetId) {
+        if (position === "inside" && node.type === "folder") {
+          return { ...node, children: [...node.children, movedNode] };
+        }
+        return node;
+      }
+      if (node.type !== "folder") return node;
+      const targetIndex = node.children.findIndex((child) => child.id === targetId);
+      if (targetIndex !== -1 && position !== "inside") {
+        const insertAt = position === "before" ? targetIndex : targetIndex + 1;
+        const children = [...node.children];
+        children.splice(insertAt, 0, movedNode);
+        return { ...node, children };
+      }
+      return { ...node, children: node.children.map(insertNode) };
+    }
+
+    setTree(insertNode(withoutDragged));
+  }
+
+  function handleChange(changes) {
+    function updateNode(node) {
+      if (node.id === selectedId) return { ...node, ...changes };
+      if (node.type !== "folder") return node;
+      return { ...node, children: node.children.map(updateNode) };
+    }
+
+    setTree(updateNode);
+  }
+
+  function countItems(node, result = { folders: 0, files: 0 }) {
+    if (node.type === "folder") {
+      if (node.id !== tree.id) result.folders += 1;
+      node.children.forEach((child) => countItems(child, result));
+    } else {
+      result.files += 1;
+    }
+    return result;
+  }
+
+  const stats = countItems(tree);
+
   return (
     <div>
       <div className={styles.wrap}>
@@ -17,12 +194,12 @@ export default function Home() {
             <div className={styles["tb-row"]}>
               <div className={styles["tb-label"]}>Project</div>
               <div className={styles["tb-val"]}>
-                <input className={styles["proj-name"]} id="projName" type="text" placeholder="Untitled"/>
+                <input className={styles["proj-name"]} id="projName" type="text" value={tree.name} onChange={(event) => setTree((current) => ({ ...current, name: event.target.value }))} placeholder="Untitled"/>
               </div>
             </div>
             <div className={styles["tb-row"]}>
               <div className={styles["tb-label"]}>Items</div>
-              <div className={styles["tb-val"]} id="tbItems">0 folders · 0 files</div>
+              <div className={styles["tb-val"]} id="tbItems">{stats.folders} folders · {stats.files} files</div>
             </div>
             <div className={styles["tb-row"]}>
               <div className={styles["tb-label"]}>Library</div>
@@ -32,10 +209,10 @@ export default function Home() {
         </div>
 
         <div className={styles.toolbar}>
-          <button className={`${styles.tbtn} ${styles.ghost}`} id="newBtn">↺ New</button>
+          <button className={`${styles.tbtn} ${styles.ghost}`} id="newBtn" onClick={handleNew}>↺ New</button>
           <button className={styles.tbtn} id="libBtn">▤ Library</button>
           <button className={styles.tbtn} id="savePresetBtn">＋ Save as preset</button>
-          <button className={`${styles.tbtn} ${styles.primary}`} id="downloadBtn">↓ Download .zip</button>
+          <button className={`${styles.tbtn} ${styles.primary}`} id="downloadBtn" onClick={handleDownload}>↓ Download .zip</button>
         </div>
 
         <div className={styles.grid}>
@@ -44,12 +221,14 @@ export default function Home() {
               <span className={styles.tag}>Structure</span>
               <span className={styles.tag} id="dropHint">drag rows to reorganize</span>
             </div>
-            <div id="treeArea"></div>
+            <Tree tree={tree} onAdd={handleAdd} onDelete={handleDelete} onSelect={setSelectedId} onMove={handleMove} />
           </div>
 
           <div className={styles.panel}>
             <div className={styles["panel-head"]}><span className={styles.tag}>Inspector</span></div>
-            <div id="inspectorArea"></div>
+            <div className={styles.inspectorArea}>
+              <Inspector tree={tree} selectedId={selectedId} onChange={handleChange} onAdd={handleAdd} onDelete={handleDelete} templates={templates} />
+            </div>
           </div>
         </div>
 
