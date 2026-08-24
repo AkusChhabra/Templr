@@ -1,4 +1,4 @@
-name: Workflow
+name: Workflow Test
 
 on: push
 
@@ -9,8 +9,12 @@ jobs:
       - name: Check run
         run: echo "success"
 
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: List files
         run: ls
 
-      - name: Read file
-        run: cat ./../../README.md
+      - name: Read README
+        run: |
+          cat README.md
