@@ -1,7 +1,6 @@
 "use client";
-
 import styles from "../page.module.css";
-import { extOf } from "../lib/utils.js";
+import { extOf } from "@/lib/utils";
 
 const exts = new Set(["xlsx", "docx", "pptx"]);
 
